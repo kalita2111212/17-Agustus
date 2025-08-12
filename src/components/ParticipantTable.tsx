@@ -1,25 +1,9 @@
 import React from 'react';
 import { Trophy, Users, User, MapPin, Calendar } from 'lucide-react';
-
-interface Participant {
-  id: string;
-  block: string;
-  houseNumber: string;
-  childCompetitions: string[];
-  childParticipant1Name: string;
-  childParticipant1Age: string;
-  childParticipant2Name: string;
-  childParticipant2Age: string;
-  adultIndividualCompetitions: string[];
-  adultParticipant1Name: string;
-  adultParticipant2Name: string;
-  adultGroupCompetitions: string[];
-  groupMembers: string;
-  registrationDate: string;
-}
+import { ParticipantWithCompetitions } from '../lib/supabase';
 
 interface ParticipantTableProps {
-  participants: Participant[];
+  participants: ParticipantWithCompetitions[];
 }
 
 const competitionNames: { [key: string]: string } = {
@@ -159,7 +143,7 @@ export default function ParticipantTable({ participants }: ParticipantTableProps
                             <td className="px-4 py-3 text-sm text-gray-900">
                               <div className="flex items-center">
                                 <MapPin className="w-4 h-4 mr-1 text-gray-400" />
-                                Blok {participant.block} No. {participant.houseNumber}
+                                Blok {participant.block} No. {participant.house_number}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-gray-900">
@@ -177,7 +161,7 @@ export default function ParticipantTable({ participants }: ParticipantTableProps
                             <td className="px-4 py-3 text-sm text-gray-500">
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                {participant.registrationDate}
+                                {new Date(participant.registration_date).toLocaleDateString('id-ID')}
                               </div>
                             </td>
                           </tr>
@@ -232,7 +216,7 @@ export default function ParticipantTable({ participants }: ParticipantTableProps
                             <td className="px-4 py-3 text-sm text-gray-900">
                               <div className="flex items-center">
                                 <MapPin className="w-4 h-4 mr-1 text-gray-400" />
-                                Blok {participant.block} No. {participant.houseNumber}
+                                Blok {participant.block} No. {participant.house_number}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-gray-900">
@@ -244,7 +228,7 @@ export default function ParticipantTable({ participants }: ParticipantTableProps
                             <td className="px-4 py-3 text-sm text-gray-500">
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                {participant.registrationDate}
+                                {new Date(participant.registration_date).toLocaleDateString('id-ID')}
                               </div>
                             </td>
                           </tr>
@@ -298,7 +282,7 @@ export default function ParticipantTable({ participants }: ParticipantTableProps
                             <td className="px-4 py-3 text-sm text-gray-900">
                               <div className="flex items-center">
                                 <MapPin className="w-4 h-4 mr-1 text-gray-400" />
-                                Blok {participant.block} No. {participant.houseNumber}
+                                Blok {participant.block} No. {participant.house_number}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900">
@@ -316,7 +300,7 @@ export default function ParticipantTable({ participants }: ParticipantTableProps
                             <td className="px-4 py-3 text-sm text-gray-500">
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                {participant.registrationDate}
+                                {new Date(participant.registration_date).toLocaleDateString('id-ID')}
                               </div>
                             </td>
                           </tr>
