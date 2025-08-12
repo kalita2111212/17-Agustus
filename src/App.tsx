@@ -2,23 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Trophy, Users, Flag, Heart, Star, ArrowRight, ChevronDown, Award } from 'lucide-react';
 import RegistrationForm from './components/RegistrationForm';
 import ParticipantTable from './components/ParticipantTable';
-
-interface Participant {
-  id: string;
-  block: string;
-  houseNumber: string;
-  childCompetitions: string[];
-  childParticipant1Name: string;
-  childParticipant1Age: string;
-  childParticipant2Name: string;
-  childParticipant2Age: string;
-  adultIndividualCompetitions: string[];
-  adultParticipant1Name: string;
-  adultParticipant2Name: string;
-  adultGroupCompetitions: string[];
-  groupMembers: string;
-  registrationDate: string;
-}
+import { getParticipantsWithCompetitions, getParticipantCount, getCompetitionStats, RegistrationFormData } from './services/competitionService';
+import { ParticipantWithCompetitions } from './lib/supabase';
 
 const heroes = [
   {
@@ -97,8 +82,40 @@ function App() {
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [participants, setParticipants] = useState<ParticipantWithCompetitions[]>([]);
   const [showParticipantTable, setShowParticipantTable] = useState(false);
+  const [participantCount, setParticipantCount] = useState(0);
+  const [competitionStats, setCompetitionStats] = useState({
+    childCompetitions: 0,
+    adultIndividualCompetitions: 0,
+    adultGroupCompetitions: 0
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load participants and stats
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [participantsData, count, stats] = await Promise.all([
+        getParticipantsWithCompetitions(),
+        getParticipantCount(),
+        getCompetitionStats()
+      ]);
+      
+      setParticipants(participantsData);
+      setParticipantCount(count);
+      setCompetitionStats(stats);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    loadData();
+  }, []);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -156,14 +173,9 @@ function App() {
     setShowResult(false);
   };
 
-  const handleRegistrationSubmit = (formData: any) => {
-    const newParticipant: Participant = {
-      id: Date.now().toString(),
-      ...formData,
-      registrationDate: new Date().toLocaleDateString('id-ID')
-    };
-    
-    setParticipants(prev => [...prev, newParticipant]);
+  const handleRegistrationSubmit = async (formData: RegistrationFormData) => {
+    // Reload data after successful registration
+    await loadData();
   };
 
   return (
@@ -369,20 +381,20 @@ function App() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center p-8 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl shadow-lg">
-              <div className="text-4xl font-bold text-red-600 mb-2">79 Tahun</div>
-              <div className="text-gray-700 font-semibold">Usia Kemerdekaan</div>
+              <div className="text-4xl font-bold text-red-600 mb-2">{isLoading ? '...' : participantCount}</div>
+              <div className="text-gray-700 font-semibold">Total Peserta</div>
             </div>
             <div className="text-center p-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-lg">
-              <div className="text-4xl font-bold text-blue-600 mb-2">17.508</div>
-              <div className="text-gray-700 font-semibold">Pulau di Indonesia</div>
+              <div className="text-4xl font-bold text-blue-600 mb-2">{isLoading ? '...' : competitionStats.childCompetitions}</div>
+              <div className="text-gray-700 font-semibold">Lomba Anak</div>
             </div>
             <div className="text-center p-8 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-lg">
-              <div className="text-4xl font-bold text-green-600 mb-2">270+ Juta</div>
-              <div className="text-gray-700 font-semibold">Penduduk Indonesia</div>
+              <div className="text-4xl font-bold text-green-600 mb-2">{isLoading ? '...' : competitionStats.adultIndividualCompetitions}</div>
+              <div className="text-gray-700 font-semibold">Lomba Dewasa</div>
             </div>
             <div className="text-center p-8 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl shadow-lg">
-              <div className="text-4xl font-bold text-yellow-600 mb-2">700+</div>
-              <div className="text-gray-700 font-semibold">Bahasa Daerah</div>
+              <div className="text-4xl font-bold text-yellow-600 mb-2">{isLoading ? '...' : competitionStats.adultGroupCompetitions}</div>
+              <div className="text-gray-700 font-semibold">Lomba Kelompok</div>
             </div>
           </div>
         </div>
@@ -407,7 +419,7 @@ function App() {
               onClick={() => setShowParticipantTable(!showParticipantTable)}
               className="ml-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl mb-8"
             >
-              📋 {showParticipantTable ? 'Sembunyikan' : 'Lihat'} Daftar Peserta ({participants.length})
+              📋 {showParticipantTable ? 'Sembunyikan' : 'Lihat'} Daftar Peserta ({isLoading ? '...' : participantCount})
             </button>
           </div>
           

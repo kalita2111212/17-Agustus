@@ -1,28 +1,11 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Calendar, Users, Trophy, X, CheckCircle, MapPin } from 'lucide-react';
-
-interface FormData {
-  block: string;
-  houseNumber: string;
-  // Kategori Anak
-  childCompetitions: string[];
-  childParticipant1Name: string;
-  childParticipant1Age: string;
-  childParticipant2Name: string;
-  childParticipant2Age: string;
-  // Kategori Dewasa Perorangan
-  adultIndividualCompetitions: string[];
-  adultParticipant1Name: string;
-  adultParticipant2Name: string;
-  // Kategori Dewasa Kelompok
-  adultGroupCompetitions: string[];
-  groupMembers: string;
-}
+import { registerParticipant, RegistrationFormData } from '../services/competitionService';
 
 interface RegistrationFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: RegistrationFormData) => void;
 }
 
 const childCompetitions = [
@@ -43,7 +26,7 @@ const adultGroupCompetitions = [
 ];
 
 export default function RegistrationForm({ isOpen, onClose, onSubmit }: RegistrationFormProps) {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<RegistrationFormData>({
     block: '',
     houseNumber: '',
     childCompetitions: [],
@@ -58,12 +41,13 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit }: Registra
     groupMembers: ''
   });
   
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<Partial<RegistrationFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
+    const newErrors: Partial<RegistrationFormData> = {};
 
     if (!formData.block.trim()) newErrors.block = 'Blok wajib diisi';
     if (!formData.houseNumber.trim()) newErrors.houseNumber = 'No Rumah wajib diisi';
@@ -117,35 +101,42 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit }: Registra
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    
-    // Pass data to parent component
-    onSubmit(formData);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        block: '',
-        houseNumber: '',
-        childCompetitions: [],
-        childParticipant1Name: '',
-        childParticipant1Age: '',
-        childParticipant2Name: '',
-        childParticipant2Age: '',
-        adultIndividualCompetitions: [],
-        adultParticipant1Name: '',
-        adultParticipant2Name: '',
-        adultGroupCompetitions: [],
-        groupMembers: ''
-      });
-      onClose();
-    }, 3000);
+    try {
+      // Register participant in Supabase
+      await registerParticipant(formData);
+      
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      
+      // Pass data to parent component
+      onSubmit(formData);
+      
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({
+          block: '',
+          houseNumber: '',
+          childCompetitions: [],
+          childParticipant1Name: '',
+          childParticipant1Age: '',
+          childParticipant2Name: '',
+          childParticipant2Age: '',
+          adultIndividualCompetitions: [],
+          adultParticipant1Name: '',
+          adultParticipant2Name: '',
+          adultGroupCompetitions: [],
+          groupMembers: ''
+        });
+        onClose();
+      }, 3000);
+    } catch (error) {
+      console.error('Registration error:', error);
+      setSubmitError('Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -153,7 +144,7 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit }: Registra
     setFormData(prev => ({ ...prev, [name]: value }));
     
     // Clear error when user starts typing
-    if (errors[name as keyof FormData]) {
+    if (errors[name as keyof RegistrationFormData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
@@ -176,7 +167,7 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit }: Registra
     });
 
     // Clear error when user selects competition
-    if (errors[fieldName as keyof FormData]) {
+    if (errors[fieldName as keyof RegistrationFormData]) {
       setErrors(prev => ({ ...prev, [fieldName]: '' }));
     }
   };
@@ -213,6 +204,19 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit }: Registra
               <div>
                 <h3 className="text-lg font-semibold text-green-800">Pendaftaran Berhasil!</h3>
                 <p className="text-green-700">Terima kasih telah mendaftar. Data Anda telah tersimpan.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {submitError && (
+          <div className="p-6 bg-red-50 border-l-4 border-red-500">
+            <div className="flex items-center">
+              <X className="w-8 h-8 text-red-500 mr-3" />
+              <div>
+                <h3 className="text-lg font-semibold text-red-800">Pendaftaran Gagal</h3>
+                <p className="text-red-700">{submitError}</p>
               </div>
             </div>
           </div>
